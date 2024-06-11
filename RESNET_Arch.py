@@ -10,6 +10,11 @@ class ReflectionPadding2D(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return tf.pad(inputs, [[0, 0], [self.padding, self.padding], [self.padding, self.padding], [0, 0]], mode='REFLECT')
+    
+    def get_config(self):
+        config = super(ReflectionPadding2D, self).get_config()
+        config.update({"padding": self.padding})
+        return config
 
 
 class DownSampling(tf.keras.layers.Layer) :  
@@ -47,6 +52,18 @@ class DownSampling(tf.keras.layers.Layer) :
         x = self.activation(x)
         return x
 
+    def get_config(self):
+        config = super(DownSampling, self).get_config()
+        config.update({
+            "in_channels": self.conv.filters,
+            "out_channels": self.conv.filters,
+            "kernel_size": self.conv.kernel_size,
+            "stride": self.conv.strides,
+            "padding": self.conv.padding,
+            "norm": self.norm is not None,
+            "lrelu": isinstance(self.activation, layers.LeakyReLU)
+        })
+        return config
 
 class UpSampling(tf.keras.layers.Layer):
 
@@ -83,6 +100,20 @@ class UpSampling(tf.keras.layers.Layer):
             x = self.activation(x)
 
             return x
+        
+        def get_config(self):
+            config = super(UpSampling, self).get_config()
+            config.update({
+                "in_channels": self.conv_t.filters,
+                "out_channels": self.conv_t.filters,
+                "kernel_size": self.conv_t.kernel_size,
+                "stride": self.conv_t.strides,
+                "padding": self.conv_t.padding,
+                "output_padding": 0,
+                "dropout": self.dropout is not None
+            })
+            return config
+
 
 class ResidualLayer(tf.keras.layers.Layer): 
 
@@ -102,6 +133,15 @@ class ResidualLayer(tf.keras.layers.Layer):
         x= self.downsampling2(x )
         return inputs + x
 
+    def get_config(self):
+        config = super(ResidualLayer, self).get_config()
+        config.update({
+            "in_channels": self.downsampling.conv.filters,
+            "kernel_size": 3,
+            "padding": 1
+        })
+        return config
+    
 ### ResnetGenerator 
 
 def Generator(res_blocks = 6, in_channels =3, hid_channels = 64, out_channels = 3): 
